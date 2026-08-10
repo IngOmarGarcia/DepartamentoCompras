@@ -38,6 +38,9 @@ export function construirApp() {
     });
   });
 
+  // Ruta raíz de bienvenida (para que no salga 404 al entrar al link principal)
+  app.get('/', async () => ({ status: 'online', service: 'ERP Compras API' }));
+
   app.get('/health', async () => ({ ok: true, servicio: 'erp-compras-almacen', ts: new Date().toISOString() }));
 
   // Todo /api requiere credencial (API Key o JWT).
