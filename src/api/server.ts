@@ -4,10 +4,10 @@ import helmet from '@fastify/helmet';
 import { env, esProduccion, corsOrigins } from '../config/env.js';
 import { AppError } from '../lib/errors.js';
 import { autenticar } from './auth.js';
-import { pedidosRoutes } from './routes/pedidos.routes.js';
-import { inventarioRoutes } from './routes/inventario.routes.js';
-import { comprasRoutes } from './routes/compras.routes.js';
-import { catalogosRoutes, dashboardRoutes } from './routes/catalogos.routes.js';
+import { pedidosRoutes } from '../api/routes/pedidos.routes.js';
+import { inventarioRoutes } from '../api/routes/inventario.routes.js';
+import { comprasRoutes } from '../api/routes/compras.routes.js';
+import { catalogosRoutes, dashboardRoutes } from '../api/routes/catalogos.routes.js';
 
 export function construirApp() {
   const app = Fastify({
