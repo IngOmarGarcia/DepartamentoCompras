@@ -1,0 +1,53 @@
+# Stack local equivalente a Supabase para desarrollo y pruebas del flujo.
+# Levanta Postgres con el esquema ya aplicado + PostgREST + un gateway que
+# expone las rutas /rest/v1 que espera supabase-js.
+#
+#   docker compose -f docker-compose.dev.yml up -d
+#   → SUPABASE_URL=http://localhost:54321
+#
+# NO usar en producción: las llaves son de desarrollo y están en claro.
+
+name: erp-compras-dev
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: erp
+    ports:
+      - '54322:5432'
+    volumes:
+      - ./docker/00-roles.sql:/docker-entrypoint-initdb.d/00-roles.sql:ro
+      - ./db/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./db/02_functions.sql:/docker-entrypoint-initdb.d/02_functions.sql:ro
+      - ./db/03_rls.sql:/docker-entrypoint-initdb.d/03_rls.sql:ro
+      - ./db/04_seed.sql:/docker-entrypoint-initdb.d/04_seed.sql:ro
+      - ./docker/99-grants.sql:/docker-entrypoint-initdb.d/99-grants.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d erp']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  rest:
+    image: postgrest/postgrest:v12.2.3
+    environment:
+      PGRST_DB_URI: postgres://authenticator:authenticator_pwd@db:5432/erp
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: secreto-local-de-desarrollo-de-al-menos-32-caracteres
+      PGRST_DB_AGGREGATES_ENABLED: 'true'
+      PGRST_LOG_LEVEL: error
+    depends_on:
+      db:
+        condition: service_healthy
+
+  gateway:
+    image: nginx:1.27-alpine
+    ports:
+      - '54321:80'
+    volumes:
+      - ./docker/gateway.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - rest

@@ -1,0 +1,41 @@
+{
+  "name": "erp-compras-almacen",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Módulo agnóstico de Compras e Inventarios con capa MCP",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "tsx watch src/api/server.ts",
+    "start": "node dist/api/server.js",
+    "mcp": "tsx src/mcp/server.ts",
+    "mcp:start": "node dist/mcp/server.js",
+    "worker": "tsx src/jobs/worker.ts",
+    "worker:start": "node dist/jobs/worker.js",
+    "web": "npm --prefix web run dev",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "db:push": "tsx scripts/push-schema.ts",
+    "keygen": "tsx scripts/generate-api-key.ts",
+    "dev:db": "docker compose -f docker-compose.dev.yml up -d",
+    "dev:db:reset": "docker compose -f docker-compose.dev.yml down -v && docker compose -f docker-compose.dev.yml up -d",
+    "dev:db:stop": "docker compose -f docker-compose.dev.yml down",
+    "dev:keys": "node scripts/dev-keys.mjs"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.1",
+    "@fastify/helmet": "^12.0.1",
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "@supabase/supabase-js": "^2.45.4",
+    "fastify": "^5.1.0",
+    "pino-pretty": "^11.3.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.5",
+    "pg": "^8.13.0",
+    "@types/pg": "^8.11.10",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3"
+  }
+}
