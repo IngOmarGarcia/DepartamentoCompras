@@ -1,13 +1,15 @@
 import type { FastifyInstance } from 'fastify';
 import { comprasService } from '../../core/compras.service.js';
 import { requiereRol } from '../auth.js';
-import { parse, ok, idRuta } from '../helpers.js';
+import { parse, ok, idRuta, indiceDeModulo } from '../helpers.js';
 import {
   AprobarRequisicionInput, CrearOrdenCompraInput, RecibirOrdenCompraInput, ListarInput,
 } from '../../schemas/index.js';
 
 export async function comprasRoutes(app: FastifyInstance): Promise<void> {
   app.addHook('preHandler', requiereRol('compras'));
+
+  indiceDeModulo(app, 'compras');
 
   /** GET /api/compras/requisiciones — bandeja generada por el flujo de faltantes. */
   app.get('/requisiciones', async (req) => {

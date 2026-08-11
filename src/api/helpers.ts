@@ -1,4 +1,5 @@
 import { z, type ZodTypeAny } from 'zod';
+import type { FastifyInstance } from 'fastify';
 import { AppError } from '../lib/errors.js';
 
 const UUID = z.string().uuid();
@@ -33,6 +34,29 @@ export function parse<T extends ZodTypeAny>(schema: T, data: unknown): z.infer<T
 /** Respuesta uniforme: `{ ok, data, meta }`. */
 export function ok<T>(data: T, meta?: Record<string, unknown>) {
   return { ok: true as const, data, ...(meta ? { meta } : {}) };
+}
+
+/**
+ * Registra `GET /` con el índice de endpoints del módulo, para que la raíz no
+ * sea un 404 desconcertante cuando solo existen subrutas.
+ *
+ * La lista se deriva de las rutas que el propio módulo registra, así que no
+ * puede quedar desfasada. Llamar al principio del plugin: el hook `onRoute`
+ * solo ve lo que se registra después de añadirlo — y por eso el índice
+ * tampoco se incluye a sí mismo.
+ */
+export function indiceDeModulo(app: FastifyInstance, modulo: string): void {
+  const endpoints: string[] = [];
+
+  app.get('/', async () => ok({ modulo, endpoints: [...endpoints].sort() }));
+
+  app.addHook('onRoute', (ruta) => {
+    const metodos = Array.isArray(ruta.method) ? ruta.method : [ruta.method];
+    for (const metodo of metodos) {
+      if (metodo === 'HEAD') continue; // Fastify lo añade solo para cada GET
+      endpoints.push(`${metodo} ${ruta.url}`);
+    }
+  });
 }
 
 /** Normaliza el resultado de PostgREST con `count` a `{ items, total }`. */

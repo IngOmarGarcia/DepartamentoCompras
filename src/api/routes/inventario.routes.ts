@@ -1,12 +1,14 @@
 import type { FastifyInstance } from 'fastify';
 import { inventarioService } from '../../core/inventario.service.js';
 import { requiereRol } from '../auth.js';
-import { parse, ok } from '../helpers.js';
+import { parse, ok, indiceDeModulo } from '../helpers.js';
 import {
   ConsultarStockInput, MovimientoInput, TransferenciaInput, EstablecerStockInput, ListarInput,
 } from '../../schemas/index.js';
 
 export async function inventarioRoutes(app: FastifyInstance): Promise<void> {
+  indiceDeModulo(app, 'inventario');
+
   /** POST /api/inventario/stock — consulta de disponibilidad (total/reservado/disponible). */
   app.post('/stock', async (req) => ok(await inventarioService.consultarStock(req.ctx, parse(ConsultarStockInput, req.body))));
 
