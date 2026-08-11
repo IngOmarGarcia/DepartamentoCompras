@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { db } from '../lib/supabase.js';
-import { hashApiKey } from '../lib/crypto.js';
+import { hashApiKey, prefijoDeApiKey } from '../lib/crypto.js';
 import { AppError, desdePostgres } from '../lib/errors.js';
 import type { Contexto, Rol } from '../types/domain.js';
 
@@ -30,7 +30,11 @@ export async function contextoDesdeApiKey(clave: string): Promise<Contexto> {
     .maybeSingle();
 
   if (error) throw desdePostgres(error);
-  if (!data || data.revocada) throw new AppError('NO_AUTORIZADO', 'API Key inválida o revocada', 401);
+  if (!data) {
+    await diagnosticarClaveDesconocida(clave);
+    throw new AppError('NO_AUTORIZADO', 'API Key inválida o revocada', 401);
+  }
+  if (data.revocada) throw new AppError('NO_AUTORIZADO', 'API Key inválida o revocada', 401);
   if (data.expira_en && new Date(data.expira_en) < new Date()) {
     throw new AppError('NO_AUTORIZADO', 'API Key expirada', 401);
   }
@@ -47,6 +51,36 @@ export async function contextoDesdeApiKey(clave: string): Promise<Contexto> {
   void db.from('api_keys').update({ ultimo_uso: new Date().toISOString() }).eq('id', data.id).then(() => {});
   return ctx;
 }
+
+/**
+ * Una credencial que no aparece por hash puede significar dos cosas muy
+ * distintas: que no existe, o que existe y el hash se calculó con otra
+ * `API_KEY_PEPPER` (típico al desplegar con la pimienta cambiada respecto a
+ * donde se corrió `keygen`). Buscar por `prefijo` —la parte no secreta— las
+ * separa. El resultado va sólo al log: al cliente se le responde 401 en ambos
+ * casos, para no confirmarle que un prefijo existe.
+ */
+async function diagnosticarClaveDesconocida(clave: string): Promise<void> {
+  const prefijo = prefijoDeApiKey(clave);
+  if (!prefijo) return;
+
+  const { data } = await db.from('api_keys').select('prefijo').eq('prefijo', prefijo).maybeSingle();
+  if (!data) return;
+
+  registrar.error(
+    `API Key con prefijo "${prefijo}" existe en la base pero su hash no coincide. ` +
+      'Casi siempre es API_KEY_PEPPER: debe ser idéntica en este servidor y en el ' +
+      'entorno donde se generó la clave con `npm run keygen`. Si cambió, vuelve a ' +
+      'emitir las credenciales.',
+  );
+}
+
+/** Destino de los diagnósticos de autenticación. Sustituible en pruebas. */
+export const registrar = {
+  error: (mensaje: string): void => {
+    process.stderr.write(`[auth] ${mensaje}\n`);
+  },
+};
 
 /** Resuelve JWT de Supabase → contexto (perfil del usuario final). */
 async function contextoDesdeJwt(token: string): Promise<Contexto> {

@@ -19,6 +19,17 @@ export function generarApiKey(entorno: 'live' | 'test' = 'live'): {
   return { clave, prefijo: cuerpo.slice(0, PREFIJO_LONGITUD), hash: hashApiKey(clave) };
 }
 
+/**
+ * Extrae el `prefijo` que quedó guardado en `api_keys` al emitir esta clave.
+ * Es la parte no secreta, y sirve para reconocer una credencial cuyo hash no
+ * cuadra — señal de que `API_KEY_PEPPER` no es el mismo con el que se generó.
+ * Devuelve null si el texto no tiene forma de API Key.
+ */
+export function prefijoDeApiKey(clave: string): string | null {
+  const cuerpo = /^sk_(?:live|test)_(.+)$/.exec(clave)?.[1];
+  return cuerpo && cuerpo.length >= PREFIJO_LONGITUD ? cuerpo.slice(0, PREFIJO_LONGITUD) : null;
+}
+
 export function comparacionSegura(a: string, b: string): boolean {
   const ba = Buffer.from(a);
   const bb = Buffer.from(b);

@@ -14,7 +14,7 @@
     "worker:start": "node dist/jobs/worker.js",
     "web": "npm --prefix web run dev",
     "build": "tsc -p tsconfig.json",
-    "test": "node --import tsx --test tests/errores.test.ts tests/helpers.test.ts tests/verificar-supabase.test.ts",
+    "test": "node --import tsx --test tests/crypto.test.ts tests/errores.test.ts tests/helpers.test.ts tests/verificar-supabase.test.ts",
     "typecheck": "tsc --noEmit -p tsconfig.test.json",
     "db:push": "tsx scripts/push-schema.ts",
     "keygen": "tsx scripts/generate-api-key.ts",
