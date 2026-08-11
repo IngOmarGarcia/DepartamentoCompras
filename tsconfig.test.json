@@ -1,7 +1,10 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "./dist",
+    // Este config es solo para revisar tipos: nunca debe emitir. `tests/` y
+    // `scripts/` viven fuera de src, así que con rootDir en "." emitir
+    // produciría dist/src/…, y `npm start` espera dist/api/server.js.
+    "noEmit": true,
     "rootDir": "."
   },
   "include": ["src/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts"]
