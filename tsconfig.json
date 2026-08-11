@@ -5,7 +5,7 @@
     "moduleResolution": "NodeNext",
     "lib": ["ES2023"],
     "outDir": "dist",
-    "rootDir": ".",
+    "rootDir": "src",
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": false,
@@ -16,6 +16,10 @@
     "declaration": false,
     "sourceMap": true
   },
-  "include": ["src/**/*.ts", "scripts/**/*.ts"],
+  // Sólo `src`: con rootDir en "src", el árbol compilado conserva la misma
+  // profundidad relativa a la raíz que el de fuentes (dist/api/… ≙ src/api/…).
+  // Los scripts de `scripts/` corren siempre con tsx, no se compilan; su
+  // revisión de tipos la cubre `npm run typecheck` vía tsconfig.test.json.
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", "web"]
 }

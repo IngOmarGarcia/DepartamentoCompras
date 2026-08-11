@@ -1,7 +1,9 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "noEmit": true
+    "noEmit": true,
+    // `tests/` y `scripts/` viven fuera de src; sin emitir, la raíz da igual.
+    "rootDir": "."
   },
   "include": ["src/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts"]
 }
