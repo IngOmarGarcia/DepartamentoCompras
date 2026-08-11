@@ -9,8 +9,7 @@ import { NextResponse, type NextRequest } from 'next/server';
  * `x-user-role` no se reenvía: la API no lo interpreta, deriva el rol de la
  * credencial. Ese header solo acota la interfaz (ver `lib/sesion.ts`).
  */
-const API_URL = process.env.API_URL ?? 'http://localhost:3000';
-
+const API_URL = process.env.API_URL ?? 'https://departamentocompras.onrender.com';
 function credencial(req: NextRequest): HeadersInit {
   const heredada = req.headers.get('x-api-key');
   if (heredada) return { 'x-api-key': heredada };
