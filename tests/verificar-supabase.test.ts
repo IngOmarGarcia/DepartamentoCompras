@@ -11,8 +11,8 @@ import { diagnosticar, probarCredencial } from '../src/config/verificar-supabase
  * que el problema está en la configuración.
  */
 
-const NUBE = 'https://giscybshrxivnmyrdoin.supabase.co';
-const REF = 'giscybshrxivnmyrdoin';
+const REF = 'refdeproyectoficticio';
+const NUBE = `https://${REF}.supabase.co`;
 const LOCAL = 'http://localhost:54321';
 
 const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url');
