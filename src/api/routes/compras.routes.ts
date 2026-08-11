@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { comprasService } from '../../core/compras.service.js';
 import { requiereRol } from '../auth.js';
-import { parse, ok } from '../helpers.js';
+import { parse, ok, idRuta } from '../helpers.js';
 import {
   AprobarRequisicionInput, CrearOrdenCompraInput, RecibirOrdenCompraInput, ListarInput,
 } from '../../schemas/index.js';
@@ -16,12 +16,12 @@ export async function comprasRoutes(app: FastifyInstance): Promise<void> {
   });
 
   app.get<{ Params: { id: string } }>('/requisiciones/:id', async (req) =>
-    ok(await comprasService.obtenerRequisicion(req.ctx, req.params.id)),
+    ok(await comprasService.obtenerRequisicion(req.ctx, idRuta(req.params.id))),
   );
 
   /** GET /api/compras/requisiciones/:id/sugerencias — mejor proveedor por línea. */
   app.get<{ Params: { id: string } }>('/requisiciones/:id/sugerencias', async (req) =>
-    ok(await comprasService.sugerirProveedores(req.ctx, req.params.id)),
+    ok(await comprasService.sugerirProveedores(req.ctx, idRuta(req.params.id))),
   );
 
   app.post<{ Params: { id: string } }>('/requisiciones/:id/aprobar', async (req) => {
@@ -42,12 +42,12 @@ export async function comprasRoutes(app: FastifyInstance): Promise<void> {
   });
 
   app.get<{ Params: { id: string } }>('/ordenes/:id', async (req) =>
-    ok(await comprasService.obtenerOrden(req.ctx, req.params.id)),
+    ok(await comprasService.obtenerOrden(req.ctx, idRuta(req.params.id))),
   );
 
   app.patch<{ Params: { id: string }; Body: { estatus: 'enviada' | 'confirmada' | 'cancelada' } }>(
     '/ordenes/:id/estatus',
-    async (req) => ok(await comprasService.cambiarEstatusOrden(req.ctx, req.params.id, req.body.estatus)),
+    async (req) => ok(await comprasService.cambiarEstatusOrden(req.ctx, idRuta(req.params.id), req.body.estatus)),
   );
 
   /**

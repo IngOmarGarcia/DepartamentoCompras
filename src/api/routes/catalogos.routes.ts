@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { catalogosService } from '../../core/catalogos.service.js';
 import { dashboardService } from '../../core/dashboard.service.js';
 import { requiereRol } from '../auth.js';
-import { parse, ok } from '../helpers.js';
+import { parse, ok, idRuta } from '../helpers.js';
 import {
   CrearProductoInput, CrearCategoriaInput, CrearUnidadInput, ListarInput,
 } from '../../schemas/index.js';
@@ -28,7 +28,7 @@ export async function catalogosRoutes(app: FastifyInstance): Promise<void> {
   );
 
   app.patch<{ Params: { id: string } }>('/productos/:id', { preHandler: requiereRol('almacen') }, async (req) =>
-    ok(await catalogosService.actualizarProducto(req.ctx, req.params.id, parse(CrearProductoInput.partial(), req.body))),
+    ok(await catalogosService.actualizarProducto(req.ctx, idRuta(req.params.id), parse(CrearProductoInput.partial(), req.body))),
   );
 
   app.get('/almacenes', async (req) => ok(await catalogosService.listarAlmacenes(req.ctx)));

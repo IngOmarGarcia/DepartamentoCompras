@@ -71,6 +71,22 @@ describe('desdePostgres · esquema desalineado', () => {
   });
 });
 
+describe('desdePostgres · entrada inválida del cliente', () => {
+  it('un :id que no es UUID es culpa del cliente, no del servidor', () => {
+    // Llegó a Postgres un parámetro de ruta sin forma de UUID. Antes salía
+    // como ERROR_BD/500, culpando al servidor de un error de quien llama.
+    assert.deepEqual(clasificar({ code: '22P02', message: 'invalid input syntax for type uuid: "cola-surtido"' }), {
+      codigo: 'ID_INVALIDO',
+      status: 400,
+    });
+  });
+
+  it('no filtra el detalle interno de Postgres en el mensaje', () => {
+    const e = desdePostgres({ code: '22P02', message: 'invalid input syntax for type uuid: "cola-surtido"' });
+    assert.doesNotMatch(e.message, /invalid input syntax/);
+  });
+});
+
 describe('desdePostgres · contrato de dominio (regresión)', () => {
   it('respeta los códigos que lanzan las funciones plpgsql', () => {
     assert.deepEqual(clasificar({ message: 'STOCK_INSUFICIENTE: faltan 40 PZA' }), {

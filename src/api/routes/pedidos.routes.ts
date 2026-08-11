@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { pedidosService } from '../../core/pedidos.service.js';
 import { requiereRol } from '../auth.js';
-import { parse, ok } from '../helpers.js';
+import { parse, ok, idRuta } from '../helpers.js';
 import {
   CrearPedidoInput, ProcesarPedidoInput, SurtirPedidoInput, CancelarPedidoInput, ListarInput,
 } from '../../schemas/index.js';
@@ -44,7 +44,7 @@ export async function pedidosRoutes(app: FastifyInstance): Promise<void> {
     return ok(await pedidosService.listar(req.ctx, f), { limite: f.limite, offset: f.offset });
   });
 
-  app.get<{ Params: { id: string } }>('/:id', async (req) => ok(await pedidosService.obtener(req.ctx, req.params.id)));
+  app.get<{ Params: { id: string } }>('/:id', async (req) => ok(await pedidosService.obtener(req.ctx, idRuta(req.params.id))));
 
   /** GET /api/pedidos/cola/surtido — bandeja del dashboard de Almacén. */
   app.get('/cola/surtido', async (req) => ok(await pedidosService.colaSurtido(req.ctx)));

@@ -1,5 +1,20 @@
-import type { ZodTypeAny, z } from 'zod';
+import { z, type ZodTypeAny } from 'zod';
 import { AppError } from '../lib/errors.js';
+
+const UUID = z.string().uuid();
+
+/**
+ * Valida un identificador que viene en la ruta. Sin esto el texto llega tal
+ * cual a Postgres, que responde `22P02`, y un error de quien llama acababa
+ * reportado como fallo del servidor.
+ */
+export function idRuta(valor: string, nombre = 'id'): string {
+  const r = UUID.safeParse(valor);
+  if (!r.success) {
+    throw new AppError('ID_INVALIDO', `El parámetro "${nombre}" no es un UUID válido`, 400);
+  }
+  return r.data;
+}
 
 /** Valida con Zod y traduce el fallo al contrato de errores del dominio. */
 export function parse<T extends ZodTypeAny>(schema: T, data: unknown): z.infer<T> {

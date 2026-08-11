@@ -110,6 +110,12 @@ export function desdePostgres(error: { message?: string; code?: string; details?
   const infra = deInfraestructura(raw.trim(), error?.code ?? '', error?.details);
   if (infra) return infra;
 
+  // Un identificador con forma inválida es un error de quien llama. Las rutas
+  // lo validan antes (`idRuta`); esto queda como red de seguridad para
+  // cualquier camino que llegue a Postgres sin pasar por ahí.
+  if (error?.code === '22P02') {
+    return new AppError('ID_INVALIDO', 'Un identificador de la petición no tiene un formato válido', 400);
+  }
   if (error?.code === '23505') return new AppError('DUPLICADO', 'El registro ya existe', 409, error.details);
   if (error?.code === '23503') return new AppError('REFERENCIA_INVALIDA', 'Referencia inexistente', 422, error.details);
   if (error?.code === '23514') return new AppError('RESTRICCION_VIOLADA', raw, 422, error.details);
