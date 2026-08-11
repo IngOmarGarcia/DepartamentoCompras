@@ -42,6 +42,61 @@ const MAPA_STATUS: Record<string, number> = {
   SIN_PERMISO: 403,
 };
 
+/**
+ * Códigos que significan "la base respondió, pero no tiene la estructura que
+ * el código espera": esquema sin aplicar o desalineado respecto a db/*.sql.
+ */
+const CODIGOS_ESQUEMA = new Set([
+  'PGRST200', // no existe la relación/FK que pide un embed
+  'PGRST202', // no existe la función del rpc()
+  'PGRST204', // columna ausente del cache de esquema
+  'PGRST205', // tabla o vista ausente del cache de esquema
+  '42P01',    // undefined_table
+  '42703',    // undefined_column
+  '42883',    // undefined_function
+]);
+
+/**
+ * Fallos de infraestructura o configuración. No los provoca quien llama a la
+ * API ni son parte del dominio, así que no deben salir como "error interno":
+ * un `.env` mal apuntado o un esquema sin aplicar necesitan un código propio
+ * para que el operador sepa qué revisar.
+ */
+function deInfraestructura(raw: string, code: string, detalle?: unknown): AppError | null {
+  // El gateway de Supabase rechazó la credencial con la que corre el backend.
+  if (/invalid api key|no api key found/i.test(raw)) {
+    return new AppError(
+      'CONFIG_SUPABASE',
+      'Supabase rechazó la credencial del backend. Revisa que SUPABASE_URL y ' +
+        'SUPABASE_SERVICE_ROLE_KEY sean del mismo proyecto.',
+      503,
+      detalle,
+    );
+  }
+
+  // Nunca hubo respuesta: URL equivocada, proyecto pausado o red caída.
+  if (/fetch failed|ENOTFOUND|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN/i.test(raw)) {
+    return new AppError(
+      'SUPABASE_INALCANZABLE',
+      `No se pudo contactar a Supabase (${raw}). Verifica SUPABASE_URL y que el proyecto esté activo.`,
+      503,
+      detalle,
+    );
+  }
+
+  if (CODIGOS_ESQUEMA.has(code)) {
+    return new AppError(
+      'ESQUEMA_DESALINEADO',
+      `La base no tiene la estructura que espera la API [${code}]: ${raw}. ` +
+        'Aplica db/01_schema.sql, db/02_functions.sql y db/03_rls.sql.',
+      500,
+      detalle,
+    );
+  }
+
+  return null;
+}
+
 /** Traduce un error de PostgREST/Postgres al contrato de errores del dominio. */
 export function desdePostgres(error: { message?: string; code?: string; details?: unknown } | null): AppError {
   const raw = error?.message ?? 'Error desconocido de base de datos';
@@ -51,6 +106,10 @@ export function desdePostgres(error: { message?: string; code?: string; details?
     const codigo = match[1]!;
     return new AppError(codigo, match[2]!.trim() || codigo, MAPA_STATUS[codigo] ?? 400, error?.details);
   }
+
+  const infra = deInfraestructura(raw.trim(), error?.code ?? '', error?.details);
+  if (infra) return infra;
+
   if (error?.code === '23505') return new AppError('DUPLICADO', 'El registro ya existe', 409, error.details);
   if (error?.code === '23503') return new AppError('REFERENCIA_INVALIDA', 'Referencia inexistente', 422, error.details);
   if (error?.code === '23514') return new AppError('RESTRICCION_VIOLADA', raw, 422, error.details);

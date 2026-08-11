@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import { env, esProduccion, corsOrigins } from '../config/env.js';
+import { verificarSupabase } from '../config/verificar-supabase.js';
 import { AppError } from '../lib/errors.js';
 import { autenticar } from './auth.js';
 import { pedidosRoutes } from '../api/routes/pedidos.routes.js';
@@ -25,6 +26,20 @@ export function construirApp() {
   app.setErrorHandler((error: unknown, req, reply) => {
     const err = error as Error & { validation?: unknown };
     if (err instanceof AppError) {
+      // 5xx = falla nuestra (configuración, esquema, infraestructura). El
+      // operador necesita el mensaje completo en el log; el cliente sólo el
+      // código, que ya dice qué pasó sin exponer detalles del despliegue.
+      if (err.status >= 500) {
+        req.log.error({ codigo: err.codigo, detalle: err.detalle }, err.message);
+        return reply.status(err.status).send({
+          ok: false,
+          error: {
+            codigo: err.codigo,
+            mensaje: esProduccion ? 'Error del servidor: revisa los logs' : err.message,
+            detalle: null,
+          },
+        });
+      }
       req.log.warn({ codigo: err.codigo, detalle: err.detalle }, err.message);
       return reply.status(err.status).send(err.toJSON());
     }
@@ -65,13 +80,19 @@ const esEntrada = process.argv[1]?.replace(/\\/g, '/').endsWith('src/api/server.
 
 if (esEntrada) {
   const app = construirApp();
-  app
-    .listen({ port: env.PORT, host: env.HOST })
-    .then(() => app.log.info(`API lista en http://${env.HOST}:${env.PORT}`))
-    .catch((e) => {
-      app.log.error(e);
+
+  void (async () => {
+    try {
+      // Antes de aceptar tráfico: si las credenciales no sirven, es mejor no
+      // arrancar que responder CONFIG_SUPABASE en cada petición.
+      await verificarSupabase(app.log);
+      await app.listen({ port: env.PORT, host: env.HOST });
+      app.log.info(`API lista en http://${env.HOST}:${env.PORT}`);
+    } catch (e) {
+      app.log.error(e instanceof Error ? e.message : e);
       process.exit(1);
-    });
+    }
+  })();
 
   for (const sig of ['SIGINT', 'SIGTERM'] as const) {
     process.on(sig, () => {

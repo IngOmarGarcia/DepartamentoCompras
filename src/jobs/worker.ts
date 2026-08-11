@@ -1,5 +1,6 @@
 import { db, rpc } from '../lib/supabase.js';
 import { env } from '../config/env.js';
+import { verificarSupabase } from '../config/verificar-supabase.js';
 import { eventosService } from '../core/eventos.service.js';
 
 /**
@@ -63,6 +64,15 @@ async function ciclo(): Promise<void> {
 }
 
 async function main(): Promise<void> {
+  // `ciclo()` atrapa sus errores para no morirse por un fallo puntual, así que
+  // sin esta comprobación un `.env` mal configurado reintentaría en silencio.
+  try {
+    await verificarSupabase({ warn: (m) => log(m) });
+  } catch (e) {
+    log((e as Error).message);
+    process.exit(1);
+  }
+
   log(
     `iniciado · intervalo ${env.JOBS_INTERVALO_MIN} min · reorden cada ${env.JOBS_REORDEN_HORAS} h · webhook ${
       env.WEBHOOK_URL ? 'activo' : 'sin configurar'

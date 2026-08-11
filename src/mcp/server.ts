@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { env } from '../config/env.js';
+import { verificarSupabase } from '../config/verificar-supabase.js';
 import { AppError } from '../lib/errors.js';
 import { contextoDesdeApiKey } from '../api/auth.js';
 import { HERRAMIENTAS } from './tools.js';
@@ -15,6 +16,9 @@ async function main(): Promise<void> {
   if (!env.MCP_API_KEY) {
     throw new Error('Falta MCP_API_KEY en el entorno: genera una con `npm run keygen`.');
   }
+
+  // stdio es el canal del protocolo: los avisos van a stderr.
+  await verificarSupabase({ warn: (m) => process.stderr.write(`[MCP] ${m}\n`) });
 
   const ctx: Contexto = await contextoDesdeApiKey(env.MCP_API_KEY);
 

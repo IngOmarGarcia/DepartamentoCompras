@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { db } from '../lib/supabase.js';
 import { hashApiKey } from '../lib/crypto.js';
-import { AppError } from '../lib/errors.js';
+import { AppError, desdePostgres } from '../lib/errors.js';
 import type { Contexto, Rol } from '../types/domain.js';
 
 declare module 'fastify' {
@@ -29,7 +29,7 @@ export async function contextoDesdeApiKey(clave: string): Promise<Contexto> {
     .eq('hash', hash)
     .maybeSingle();
 
-  if (error) throw new AppError('ERROR_BD', error.message, 500);
+  if (error) throw desdePostgres(error);
   if (!data || data.revocada) throw new AppError('NO_AUTORIZADO', 'API Key inválida o revocada', 401);
   if (data.expira_en && new Date(data.expira_en) < new Date()) {
     throw new AppError('NO_AUTORIZADO', 'API Key expirada', 401);
@@ -59,7 +59,7 @@ async function contextoDesdeJwt(token: string): Promise<Contexto> {
     .eq('id', data.user.id)
     .maybeSingle();
 
-  if (e2) throw new AppError('ERROR_BD', e2.message, 500);
+  if (e2) throw desdePostgres(e2);
   if (!perfil || !perfil.activo) throw new AppError('NO_AUTORIZADO', 'Perfil inexistente o inactivo', 401);
 
   return {
