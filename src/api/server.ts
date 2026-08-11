@@ -1,3 +1,4 @@
+import { pathToFileURL } from 'node:url';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
@@ -75,8 +76,11 @@ export function construirApp() {
   return app;
 }
 
-const esEntrada = process.argv[1]?.replace(/\\/g, '/').endsWith('src/api/server.ts')
-  || process.argv[1]?.replace(/\\/g, '/').endsWith('dist/api/server.js');
+// ¿Se está ejecutando este archivo directamente, o sólo lo importan para usar
+// `construirApp`? Comparar la URL del módulo con el argumento de entrada es
+// exacto e independiente del layout: antes se comparaban sufijos de ruta y
+// dejó de reconocerse el binario compilado al cambiar de sitio.
+const esEntrada = process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
 
 if (esEntrada) {
   const app = construirApp();

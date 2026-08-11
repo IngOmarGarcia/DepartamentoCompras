@@ -188,7 +188,7 @@ veces no genera un segundo movimiento — y sigue sin poder consumir material ap
   "mcpServers": {
     "erp-compras": {
       "command": "node",
-      "args": ["C:/Users/66762/Desktop/DepartamentoCompras/dist/mcp/server.js"],
+      "args": ["C:/Users/66762/Desktop/DepartamentoCompras/dist/src/mcp/server.js"],
       "env": { "MCP_API_KEY": "sk_live_…" }
     }
   }

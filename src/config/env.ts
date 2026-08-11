@@ -1,10 +1,30 @@
 import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import { existsSync } from 'node:fs';
 import { z } from 'zod';
 
+/**
+ * Localiza el `.env` subiendo desde este módulo. No basta una ruta relativa
+ * fija: en desarrollo se ejecuta `src/config/env.ts` (dos niveles hasta la
+ * raíz) y compilado `dist/src/config/env.js` (tres). Buscar hacia arriba
+ * funciona en ambos y no depende del directorio desde el que se invoque.
+ */
+function rutaEnv(): string | null {
+  let dir = dirname(fileURLToPath(import.meta.url));
+  for (let i = 0; i < 5; i++) {
+    const candidato = join(dir, '.env');
+    if (existsSync(candidato)) return candidato;
+    const padre = dirname(dir);
+    if (padre === dir) break;
+    dir = padre;
+  }
+  return null;
+}
+
 // Carga `.env` sin dependencias externas (Node ≥ 21.7).
-// `fileURLToPath` resuelve correctamente las rutas de Windows (C:\...).
 try {
-  process.loadEnvFile?.(fileURLToPath(new URL('../../.env', import.meta.url)));
+  const ruta = rutaEnv();
+  if (ruta) process.loadEnvFile?.(ruta);
 } catch {
   /* sin .env: se usan las variables ya presentes en el entorno */
 }
